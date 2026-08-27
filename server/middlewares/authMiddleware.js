@@ -3,29 +3,35 @@ import User from "../models/user.js";
 
 const protectRoute = async (req, res, next) => {
   try {
-    let token = req.cookies?.token;
+    const token = req.cookies?.token;
 
-    if (token) {
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-
-      const resp = await User.findById(decodedToken.userId).select(
-        "isAdmin email"
-      );
-
-      req.user = {
-        email: resp.email,
-        isAdmin: resp.isAdmin,
-        userId: decodedToken.userId,
-      };
-
-      next();
-    } else {
+    if (!token) {
       return res
         .status(401)
         .json({ status: false, message: "Not authorized. Try login again." });
     }
+
+    // Token verify karo
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+    // DB me User verify karo
+    const user = await User.findById(decodedToken.userId).select("isAdmin email");
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ status: false, message: "User not found. Try login again." });
+    }
+
+    req.user = {
+      email: user.email,
+      isAdmin: user.isAdmin,
+      userId: decodedToken.userId,
+    };
+
+    next();
   } catch (error) {
-    console.error(error);
+    console.error("Auth Middleware Error:", error.message);
     return res
       .status(401)
       .json({ status: false, message: "Not authorized. Try login again." });
