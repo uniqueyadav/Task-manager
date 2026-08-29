@@ -4,8 +4,28 @@ const API_URI = "https://task-manager-ktt8.onrender.com/api";
 
 const baseQuery = fetchBaseQuery({
     baseUrl: API_URI,
-    //credentials: true, 
     credentials: "include",
+    prepareHeaders: (headers, { getState }) => {
+        const state = getState();
+        let token = null;
+
+        // Clean safety logic without using optional chaining syntax
+        if (state && state.auth) {
+            token = state.auth.token || (state.auth.user && state.auth.user.token);
+        }
+
+        // Fallback: LocalStorage se check karo
+        if (!token) {
+            token = localStorage.getItem("token");
+        }
+
+        // Authorization Header Set Karo
+        if (token) {
+            headers.set("authorization", `Bearer ${token}`);
+        }
+
+        return headers;
+    },
 });
 
 export const apiSlice = createApi({
