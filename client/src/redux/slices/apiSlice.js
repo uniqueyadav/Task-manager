@@ -1,23 +1,38 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const API_URI = "http://localhost:8800/api";
-
-// Use environment variable for production fallback
-// const API_URI =
-//     import.meta.env ? .VITE_APP_BASE_URL || "http://localhost:8800/api";
+const API_URI = "https://task-manager-ktt8.onrender.com/api";
 
 const baseQuery = fetchBaseQuery({
     baseUrl: API_URI,
     credentials: "include",
+    prepareHeaders: (headers, { getState }) => {
+        const state = getState();
+        let token = null;
+
+        // Clean safety logic without using optional chaining syntax
+        if (state && state.auth) {
+            token = state.auth.token || (state.auth.user && state.auth.user.token);
+        }
+
+        // Fallback: LocalStorage se check karo
+        if (!token) {
+            token = localStorage.getItem("token");
+        }
+
+        // Authorization Header Set Karo
+        if (token) {
+            headers.set("authorization", `Bearer ${token}`);
+        }
+
+        return headers;
+    },
 });
 
 export const apiSlice = createApi({
     baseQuery,
     tagTypes: ["Task", "User", "Notice"],
     endpoints: (builder) => ({
-        // ==========================================
         // Auth Endpoints
-        // ==========================================
         login: builder.mutation({
             query: (data) => ({
                 url: "/user/login",
@@ -39,9 +54,7 @@ export const apiSlice = createApi({
             }),
         }),
 
-        // ==========================================
         // User / Team Endpoints
-        // ==========================================
         getTeamList: builder.query({
             query: (params = {}) => {
                 const { isTrashed = false } = params;
@@ -75,6 +88,13 @@ export const apiSlice = createApi({
             }),
             invalidatesTags: ["User"],
         }),
+        changePassword: builder.mutation({
+            query: (data) => ({
+                url: "/user/change-password",
+                method: "PUT",
+                body: data,
+            }),
+        }),
         userAction: builder.mutation({
             query: (id) => ({
                 url: `/user/${id}`,
@@ -97,9 +117,7 @@ export const apiSlice = createApi({
             invalidatesTags: ["User"],
         }),
 
-        // ==========================================
         // Dashboard Endpoints
-        // ==========================================
         getDashboardStats: builder.query({
             query: () => ({
                 url: "/task/dashboard",
@@ -108,9 +126,7 @@ export const apiSlice = createApi({
             providesTags: ["Task"],
         }),
 
-        // ==========================================
         // Notification Endpoints
-        // ==========================================
         getNotifications: builder.query({
             query: () => ({
                 url: "/user/notifications",
@@ -126,9 +142,7 @@ export const apiSlice = createApi({
             invalidatesTags: ["Notice"],
         }),
 
-        // ==========================================
-        // Task Endpoints (CRUD)
-        // ==========================================
+        // Task Endpoints
         getTasks: builder.query({
             query: (params = {}) => {
                 const { stage = "", isTrashed = false } = params;
@@ -228,6 +242,7 @@ export const {
     useGetTrashedUsersQuery,
     useAddNewUserMutation,
     useUpdateUserMutation,
+    useChangePasswordMutation,
     useUserActionMutation,
     useDeleteUserMutation,
     useDeleteRestoreUserMutation,

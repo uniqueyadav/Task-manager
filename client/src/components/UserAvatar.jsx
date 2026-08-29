@@ -7,9 +7,12 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getInitials } from "../utils";
 
-// 1. Correct Import Path
 import { useLogoutMutation } from "../redux/slices/apiSlice";
 import { logout } from "../redux/slices/authSlice";
+
+// Modals Import
+import AddUser from "./AddUser";
+import ChangePassword from "./ChangePassword";
 
 const UserAvatar = () => {
   const [open, setOpen] = useState(false);
@@ -19,28 +22,17 @@ const UserAvatar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // RTK Query Logout Hook
   const [logoutApi] = useLogoutMutation();
 
   const logoutHandler = async () => {
     try {
-      // Step 1: Call Backend API to clear httpOnly cookie
       await logoutApi().unwrap();
-
-      // Step 2: Clear Redux store state
       dispatch(logout());
-
-      // Step 3: Clear LocalStorage explicitly
       localStorage.removeItem("userInfo");
-
       toast.success("Logged out successfully");
-
-      // Step 4: Redirect to login page
       navigate("/log-in");
     } catch (err) {
       console.error("Logout Error:", err);
-      
-      // Fallback: Agar backend API fail ho bhi jaaye, local cleanup execute hoga
       dispatch(logout());
       localStorage.removeItem("userInfo");
       navigate("/log-in");
@@ -122,6 +114,10 @@ const UserAvatar = () => {
           </Transition>
         </Menu>
       </div>
+
+      {/* Render Modals */}
+      <AddUser open={open} setOpen={setOpen} userData={user} />
+      <ChangePassword open={openPassword} setOpen={setOpenPassword} />
     </>
   );
 };
