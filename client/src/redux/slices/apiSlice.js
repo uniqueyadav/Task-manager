@@ -4,8 +4,8 @@ const API_URI = "https://task-manager-ktt8.onrender.com/api";
 
 const baseQuery = fetchBaseQuery({
     baseUrl: API_URI,
-    credentials: true, // This ensures that cookies are sent with requests
-    // credentials: "include",
+    //credentials: true, 
+    credentials: "include",
 });
 
 export const apiSlice = createApi({
